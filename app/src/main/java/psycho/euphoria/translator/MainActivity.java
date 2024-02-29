@@ -250,34 +250,7 @@ public class MainActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case SEARCH_REQUEST_CODE:
-                ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                String contents = clipboardManager.getText().toString();
-                File dir = new File("/storage/emulated/0/Books/导入");
-                if (!dir.isDirectory())
-                    dir.mkdirs();
-                if (new File(contents).exists()) {
-                    for (File d : dir.listFiles(new FileFilter() {
-                        @Override
-                        public boolean accept(File file) {
-                            return file.isDirectory();
-                        }
-                    })) {
-                        try {
-                            File f = Files.find(d.toPath(), 5, new BiPredicate<Path, BasicFileAttributes>() {
-                                @Override
-                                public boolean test(Path path, BasicFileAttributes basicFileAttributes) {
-                                    return !basicFileAttributes.isDirectory() && path.toFile().getName().endsWith(".ncx");
-                                }
-                            }).findFirst().get().toFile();
-                            if (f != null) {
-                                readToc(f.getAbsolutePath());
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
-                } else {
-                    insertString(contents);
-                }
+                importFile();
                 break;
             case 2:
                 String[] ids = mNotes.getIds().toArray(new String[0]);
@@ -307,6 +280,57 @@ public class MainActivity extends Activity {
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void importFile() {
+        ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        String v = clipboardManager.getText().toString();
+        if (new File(v).exists()) {
+            String fileName = Shared.substringAfterLast(v, "/");
+            fileName = Shared.substringBeforeLast(fileName, ".");
+            fileName = getExternalStorageDocumentFile(this, fileName + ".db").getAbsolutePath();
+            Notes notes = new Notes(this, fileName);
+            String contents = null;
+            try {
+                contents = Utils.readAllText(v);
+                insertString(contents, notes);
+            } catch (Exception e) {
+            }
+
+        } else {
+            insertString(v);
+        }
+    }
+
+    private void importEpub() {
+        ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        String contents = clipboardManager.getText().toString();
+        File dir = new File("/storage/emulated/0/Books/导入");
+        if (!dir.isDirectory())
+            dir.mkdirs();
+        if (new File(contents).exists()) {
+            for (File d : dir.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    return file.isDirectory();
+                }
+            })) {
+                try {
+                    File f = Files.find(d.toPath(), 5, new BiPredicate<Path, BasicFileAttributes>() {
+                        @Override
+                        public boolean test(Path path, BasicFileAttributes basicFileAttributes) {
+                            return !basicFileAttributes.isDirectory() && path.toFile().getName().endsWith(".ncx");
+                        }
+                    }).findFirst().get().toFile();
+                    if (f != null) {
+                        readToc(f.getAbsolutePath());
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        } else {
+            insertString(contents);
+        }
     }
 
     void createSearchView(Menu menu) {
