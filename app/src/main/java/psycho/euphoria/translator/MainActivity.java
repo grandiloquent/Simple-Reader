@@ -202,8 +202,19 @@ public class MainActivity extends Activity {
             if (notes == null) {
                 return;
             }
-            mNotes = new Notes(this, notes);
-            mIndex = 1;
+            mFile = notes;
+            mNotes = new Notes(this, mFile);
+            try {
+
+                byte[] datav = mBlobCache.lookup(mFile.hashCode());
+                if (datav != null) {
+                    DataInputStream dis = new DataInputStream(
+                            new ByteArrayInputStream(datav));
+                    mIndex = dis.readInt();
+                }
+            } catch (IOException e) {
+                mIndex = 1;
+            }
             loadSpecifiedPage();
             PreferenceManager.getDefaultSharedPreferences(this).edit()
                     .putString(KEY_NOTES, notes).apply();
@@ -233,7 +244,6 @@ public class MainActivity extends Activity {
                         new ByteArrayInputStream(data));
                 mIndex = dis.readInt();
             }
-
         } catch (IOException e) {
             mIndex = 1;
         }
