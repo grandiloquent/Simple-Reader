@@ -152,7 +152,7 @@ public class Utils {
     @TargetApi(VERSION_CODES.O)
     public static String readAllText(String path) throws Exception {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
-        return new String(bytes, "gbk");
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     public static long packRangeInLong(int start, int end) {

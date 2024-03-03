@@ -27,8 +27,13 @@ import android.widget.SearchView;
 import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -44,7 +49,6 @@ import static psycho.euphoria.translator.Utils.requestManageAllFilePermission;
 
 public class MainActivity extends Activity {
 
-    public static final String KEY_INDEX = "index";
     public static final String KEY_NOTES = "notes";
     public static final String KEY_Q = "q";
     public static final int SEARCH_REQUEST_CODE = 1;
@@ -53,7 +57,59 @@ public class MainActivity extends Activity {
     private Notes mNotes;
     int mIndex = 0;
     private Pagination mPagination;
+    private BlobCache mBlobCache;
+    String mFile;
 
+    private void importEpub() {
+        ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        String contents = clipboardManager.getText().toString();
+        File dir = new File("/storage/emulated/0/Books/导入");
+        if (!dir.isDirectory())
+            dir.mkdirs();
+        if (new File(contents).exists()) {
+            for (File d : dir.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    return file.isDirectory();
+                }
+            })) {
+                try {
+                    File f = Files.find(d.toPath(), 5, new BiPredicate<Path, BasicFileAttributes>() {
+                        @Override
+                        public boolean test(Path path, BasicFileAttributes basicFileAttributes) {
+                            return !basicFileAttributes.isDirectory() && path.toFile().getName().endsWith(".ncx");
+                        }
+                    }).findFirst().get().toFile();
+                    if (f != null) {
+                        readToc(f.getAbsolutePath());
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        } else {
+            insertString(contents);
+        }
+    }
+
+    private void importFile() {
+        ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        String v = clipboardManager.getText().toString();
+        if (new File(v).exists()) {
+            String fileName = Shared.substringAfterLast(v, "/");
+            fileName = Shared.substringBeforeLast(fileName, ".");
+            fileName = getExternalStorageDocumentFile(this, fileName + ".db").getAbsolutePath();
+            Notes notes = new Notes(this, fileName);
+            String contents = null;
+            try {
+                contents = Utils.readAllText(v);
+                insertString(contents, notes);
+            } catch (Exception e) {
+            }
+
+        } else {
+            insertString(v);
+        }
+    }
 
     private void insertString(String contents) {
         mPagination = new Pagination(contents,
@@ -70,9 +126,10 @@ public class MainActivity extends Activity {
     }
 
     private void insertString(String contents, Notes notes) {
+        Log.e("B5aOx2", String.format("insertString, %s", mTextView.getHeight() - 132 * 2));
         mPagination = new Pagination(contents,
                 1080 - 132 * 2,
-                mTextView.getHeight() - 132
+                1600//mTextView.getHeight() - 132 * 2
                 ,
                 mTextView.getPaint(),
                 mTextView.getLineSpacingMultiplier(),
@@ -81,19 +138,6 @@ public class MainActivity extends Activity {
         for (int i = 0; i < mPagination.size(); i++) {
             notes.insertString(mPagination.get(i).toString());
         }
-    }
-
-    public File findFile(String name, File file) {
-        File[] list = file.listFiles();
-        if (list != null)
-            for (File fil : list) {
-                if (fil.isDirectory()) {
-                    findFile(name, fil);
-                } else if (file.getName().endsWith(name)) {
-                    return file;
-                }
-            }
-        return null;
     }
 
     private void readToc(String file) {
@@ -123,8 +167,14 @@ public class MainActivity extends Activity {
     }
 
     private void saveSet() {
-        PreferenceManager.getDefaultSharedPreferences(MainActivity.this)
-                .edit().putInt(KEY_INDEX, mIndex).apply();
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(bos);
+            dos.writeInt(mIndex);
+            dos.flush();
+            mBlobCache.insert(mFile.hashCode(), bos.toByteArray());
+        } catch (Exception ignored) {
+        }
     }
 
     private void translate(String s) {
@@ -160,7 +210,6 @@ public class MainActivity extends Activity {
         }
     }
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -169,15 +218,29 @@ public class MainActivity extends Activity {
         mDatabase = new Database(this,
                 new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "psycho.db").getAbsolutePath());
         String noteDatabaseDefaultFullPath = getExternalStorageDocumentFile(this, "notes.db").getAbsolutePath();
-        String f = preferences.getString(KEY_NOTES, noteDatabaseDefaultFullPath);
-        if (!new File(f).exists()) {
-            f = noteDatabaseDefaultFullPath;
+        mFile = preferences.getString(KEY_NOTES, noteDatabaseDefaultFullPath);
+        if (!new File(mFile).exists()) {
+            mFile = noteDatabaseDefaultFullPath;
         }
-        mNotes = new Notes(this, f);
+        File cacheDir = getExternalCacheDir();
+        String path = cacheDir.getAbsolutePath() + "/bookmark";
+        try {
+            mBlobCache = new BlobCache(path, 100 * 10, 10 * 10 * 1024, false,
+                    1);
+            byte[] data = mBlobCache.lookup(mFile.hashCode());
+            if (data != null) {
+                DataInputStream dis = new DataInputStream(
+                        new ByteArrayInputStream(data));
+                mIndex = dis.readInt();
+            }
+
+        } catch (IOException e) {
+            mIndex = 1;
+        }
+        mNotes = new Notes(this, mFile);
         setContentView(R.layout.main);
         mTextView = findViewById(R.id.text_view);
         final WordIterator wordIterator = new WordIterator();
-        mIndex = preferences.getInt(KEY_INDEX, SEARCH_REQUEST_CODE);
         mTextView.setText(mNotes.queryContent(Integer.toString(mIndex)));
         float dip = 48f;
         Resources r = getResources();
@@ -230,6 +293,11 @@ public class MainActivity extends Activity {
         }
     }
 
+    @Override
+    protected void onPause() {
+        saveSet();
+        super.onPause();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -280,57 +348,6 @@ public class MainActivity extends Activity {
                 break;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private void importFile() {
-        ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-        String v = clipboardManager.getText().toString();
-        if (new File(v).exists()) {
-            String fileName = Shared.substringAfterLast(v, "/");
-            fileName = Shared.substringBeforeLast(fileName, ".");
-            fileName = getExternalStorageDocumentFile(this, fileName + ".db").getAbsolutePath();
-            Notes notes = new Notes(this, fileName);
-            String contents = null;
-            try {
-                contents = Utils.readAllText(v);
-                insertString(contents, notes);
-            } catch (Exception e) {
-            }
-
-        } else {
-            insertString(v);
-        }
-    }
-
-    private void importEpub() {
-        ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-        String contents = clipboardManager.getText().toString();
-        File dir = new File("/storage/emulated/0/Books/导入");
-        if (!dir.isDirectory())
-            dir.mkdirs();
-        if (new File(contents).exists()) {
-            for (File d : dir.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File file) {
-                    return file.isDirectory();
-                }
-            })) {
-                try {
-                    File f = Files.find(d.toPath(), 5, new BiPredicate<Path, BasicFileAttributes>() {
-                        @Override
-                        public boolean test(Path path, BasicFileAttributes basicFileAttributes) {
-                            return !basicFileAttributes.isDirectory() && path.toFile().getName().endsWith(".ncx");
-                        }
-                    }).findFirst().get().toFile();
-                    if (f != null) {
-                        readToc(f.getAbsolutePath());
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        } else {
-            insertString(contents);
-        }
     }
 
     void createSearchView(Menu menu) {
