@@ -19,7 +19,8 @@ public class TranslatorApi {
 
     public static String translateChinese(String q) throws Exception {
         boolean isChinese = mChinese.matcher(q).find();
-        String uri = isChinese ? "http://dict.youdao.com/jsonapi?xmlVersion=5.1&client=&dicts=%7B%22count%22%3A99%2C%22dicts%22%3A%5B%5B%22newhh%22%5D%5D%7D&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=5g&abtest=&jsonversion=2&q=" + q : "http://dict.youdao.com/jsonapi?xmlVersion=5.1&client=&dicts=%7B%22count%22%3A99%2C%22dicts%22%3A%5B%5B%22ec%22%5D%5D%7D&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=5g&abtest=&jsonversion=2&q=" + q;
+        String uri = isChinese ? "http://dict.youdao.com/jsonapi?xmlVersion=5.1&client=&dicts=%7B%22count%22%3A99%2C%22dicts%22%3A%5B%5B%22newhh%22%5D%5D%7D&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=5g&abtest=&jsonversion=2&q=" + q :
+                "http://dict.youdao.com/jsonapi?xmlVersion=5.1&client=&dicts=%7B%22count%22%3A99%2C%22dicts%22%3A%5B%5B%22ec%22%5D%5D%7D&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=5g&abtest=&jsonversion=2&q=" + q;
         HttpURLConnection c = (HttpURLConnection) new URL(uri).openConnection();
         String s = Shared.readString(c);
         JSONObject obj = new JSONObject(s);
@@ -29,6 +30,7 @@ public class TranslatorApi {
                         .getJSONArray("dataList").getJSONObject(0);
                 JSONArray sense = dataList.getJSONArray("sense");
                 StringBuffer sb = new StringBuffer();
+                if(dataList.has("pinyin"))
                 sb.append(dataList.getString("pinyin")).append("\n");
                 for (int i = 0; i < sense.length(); i++) {
                     sb.append(sense.getJSONObject(i).getJSONArray("def").getString(0)).append("\n");
@@ -42,6 +44,7 @@ public class TranslatorApi {
                         .getJSONArray("word").getJSONObject(0);
                 JSONArray trs = word.getJSONArray("trs");
                 StringBuffer sb = new StringBuffer();
+                if(word.has("usphone"))
                 sb.append(word.getString("usphone")).append("\n");
                 for (int i = 0; i < trs.length(); i++) {
                     sb.append(trs.getJSONObject(i).getJSONArray("tr").getJSONObject(0)

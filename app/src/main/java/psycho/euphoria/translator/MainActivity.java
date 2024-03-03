@@ -204,6 +204,7 @@ public class MainActivity extends Activity {
             }
             mFile = notes;
             mNotes = new Notes(this, mFile);
+            mIndex = 1;
             try {
 
                 byte[] datav = mBlobCache.lookup(mFile.hashCode());
@@ -213,7 +214,7 @@ public class MainActivity extends Activity {
                     mIndex = dis.readInt();
                 }
             } catch (IOException e) {
-                mIndex = 1;
+
             }
             loadSpecifiedPage();
             PreferenceManager.getDefaultSharedPreferences(this).edit()
