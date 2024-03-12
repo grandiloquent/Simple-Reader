@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package android.text.method;
+package psycho.euphoria.translator;
 
 import android.text.Selection;
 import android.text.SpannableStringBuilder;

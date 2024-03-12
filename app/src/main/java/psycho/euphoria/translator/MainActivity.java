@@ -15,7 +15,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.text.method.WordIterator;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
