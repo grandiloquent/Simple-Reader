@@ -12,6 +12,9 @@ import android.widget.ListView;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.Collator;
+import java.util.Comparator;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class BooksActivity extends Activity {
@@ -25,17 +28,24 @@ public class BooksActivity extends Activity {
         listView.setAdapter(adapter);
         listView.setOnItemClickListener((parent, view, position, id) -> {
             Intent data = new Intent();
-            data.putExtra(MainActivity.KEY_NOTES, Utils.getExternalStorageDocumentFile(this,adapter.getItem(position)).getAbsolutePath());
+            data.putExtra(MainActivity.KEY_NOTES, Utils.getExternalStorageDocumentFile(this, adapter.getItem(position)).getAbsolutePath());
             setResult(RESULT_OK, data);
             finish();
         });
         if (VERSION.SDK_INT >= VERSION_CODES.O) {
             try {
+                Collator collator = Collator.getInstance(Locale.CHINA);
                 adapter.update(Files.list(Utils.getExternalStorageDocumentFile(this, "").toPath())
-                                .filter(x->x.getFileName().toString().endsWith(".db"))
-                        .map(x -> x.getFileName().toString()).collect(Collectors.toList()));
+                        .filter(x -> x.getFileName().toString().endsWith(".db"))
+                        .map(x -> x.getFileName().toString())
+                        .sorted(new Comparator<String>() {
+                            @Override
+                            public int compare(String s, String t1) {
+                                return collator.compare(s, t1);
+                            }
+                        })
+                        .collect(Collectors.toList()));
             } catch (Exception e) {
-
             }
         }
     }
