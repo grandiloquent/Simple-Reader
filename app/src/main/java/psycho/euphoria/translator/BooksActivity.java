@@ -6,9 +6,15 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -18,13 +24,15 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class BooksActivity extends Activity {
+    BooksAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ListView listView = new ListView(this);
         setContentView(listView);
-        BooksAdapter adapter = new BooksAdapter();
+        registerForContextMenu(listView);
+        adapter = new BooksAdapter();
         listView.setAdapter(adapter);
         listView.setOnItemClickListener((parent, view, position, id) -> {
             Intent data = new Intent();
@@ -48,5 +56,22 @@ public class BooksActivity extends Activity {
             } catch (Exception e) {
             }
         }
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+        menu.add(0, 0, 0, "删除");
+        super.onCreateContextMenu(menu, v, menuInfo);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterContextMenuInfo menuInfo = (AdapterContextMenuInfo) item.getMenuInfo();
+        int id = item.getItemId();
+        if (id == 0) {
+            File file = Utils.getExternalStorageDocumentFile(this, adapter.getItem(menuInfo.position));
+            file.delete();
+        }
+        return super.onContextItemSelected(item);
     }
 }
