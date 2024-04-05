@@ -1,5 +1,6 @@
 package psycho.euphoria.translator;
 
+import android.Manifest.permission;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
@@ -7,11 +8,13 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
@@ -37,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.BreakIterator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.regex.Pattern;
@@ -47,10 +51,17 @@ import static psycho.euphoria.translator.Utils.getExternalStorageDocumentFile;
 import static psycho.euphoria.translator.Utils.requestManageAllFilePermission;
 
 public class MainActivity extends Activity {
-
     public static final String KEY_NOTES = "notes";
     public static final String KEY_Q = "q";
     public static final int SEARCH_REQUEST_CODE = 1;
+
+    static {
+/*
+加载编译Rust代码后得到共享库。它完整的名称为librust.so
+  */
+        System.loadLibrary("nativelib");
+    }
+
     TextView mTextView;
     private Database mDatabase;
     private Notes mNotes;
@@ -58,6 +69,12 @@ public class MainActivity extends Activity {
     private Pagination mPagination;
     private BlobCache mBlobCache;
     String mFile;
+
+    public static native void deleteCamera();
+
+    public static native void openCamera();
+
+    public static native void takePhoto();
 
     private void importEpub() {
         ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
@@ -205,7 +222,6 @@ public class MainActivity extends Activity {
             mNotes = new Notes(this, mFile);
             mIndex = 1;
             try {
-
                 byte[] datav = mBlobCache.lookup(mFile.hashCode());
                 if (datav != null) {
                     DataInputStream dis = new DataInputStream(
@@ -213,7 +229,6 @@ public class MainActivity extends Activity {
                     mIndex = dis.readInt();
                 }
             } catch (IOException e) {
-
             }
             loadSpecifiedPage();
             PreferenceManager.getDefaultSharedPreferences(this).edit()
@@ -225,6 +240,13 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestManageAllFilePermission(this);
+        List<String> permissions = new ArrayList<>();
+        if (checkSelfPermission(permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(permission.CAMERA);
+        }
+        if (!permissions.isEmpty()) {
+            requestPermissions(permissions.toArray(new String[0]), 0);
+        }
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         mDatabase = new Database(this,
                 new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "psycho.db").getAbsolutePath());
@@ -266,6 +288,7 @@ public class MainActivity extends Activity {
                     final float y = event.getY();
                     if (x < 132) {//
                         navigateToPreviousPage();
+                        takePhotos();
                         return true;
                     }
                     if (x > 1080 - 132) {
@@ -360,6 +383,8 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    native void cameraPreview();
+
     void createSearchView(Menu menu) {
         MenuItem searchItem = menu.add(0, 11, 0, "搜索");
         SearchView searchView = new SearchView(this);
@@ -415,5 +440,18 @@ public class MainActivity extends Activity {
             selectionEnd = Utils.unpackRangeEndFromLong(range);
         }
         return mTextView.getText().subSequence(selectionStart, selectionEnd).toString().trim();
+    }
+
+    public static void takePhotos() {
+        openCamera();
+        new CountDownTimer(30000, 1000) {
+            public void onTick(long millisUntilFinished) {
+                takePhoto();
+            }
+
+            public void onFinish() {
+                deleteCamera();
+            }
+        }.start();
     }
 }

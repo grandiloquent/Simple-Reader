@@ -14,7 +14,7 @@ void imageReader::imagePreview(jint *image, jint width, jint height) {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_psycho_euphoria_app_ServerService_openCamera(JNIEnv *env, jclass clazz) {
+Java_psycho_euphoria_translator_MainActivity_openCamera(JNIEnv *env, jclass clazz) {
     //wrapper = new CameraWrapper(env, pInstance);
     uint32_t w = 480;
     uint32_t h = 640;
@@ -23,7 +23,7 @@ Java_psycho_euphoria_app_ServerService_openCamera(JNIEnv *env, jclass clazz) {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_psycho_euphoria_app_ServerService_cameraPreview(JNIEnv *env, jobject thiz) {
+Java_psycho_euphoria_translator_MainActivity_cameraPreview(JNIEnv *env, jobject thiz) {
     cameraEngine1->startPreview(true);
 
     std::thread prewiewHandler(&CameraWrapper::imageGeting, wrapper, cameraEngine1);
@@ -31,13 +31,13 @@ Java_psycho_euphoria_app_ServerService_cameraPreview(JNIEnv *env, jobject thiz) 
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_psycho_euphoria_app_ServerService_takePhoto(JNIEnv *env, jclass clazz) {
+Java_psycho_euphoria_translator_MainActivity_takePhoto(JNIEnv *env, jclass clazz) {
     std::thread photoHandler(&cameraEngine::onTakeImage, cameraEngine1);
     photoHandler.detach();
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_psycho_euphoria_app_ServerService_deleteCamera(JNIEnv *env, jclass clazz) {
+Java_psycho_euphoria_translator_MainActivity_deleteCamera(JNIEnv *env, jclass clazz) {
     if (cameraEngine1) {
         cameraEngine1->deleteCamera();
         cameraEngine1 = nullptr;
