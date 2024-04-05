@@ -110,10 +110,32 @@ public class MainActivity extends Activity {
     private void importFile() {
         ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
         String v = clipboardManager.getText().toString();
+        File f = new File(v);
+        if (f.exists()) {
+            f = f.getParentFile();
+            File[] files = f.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    return file.isFile() && file.getName().endsWith(".txt");
+                }
+            });
+            if (files != null && files.length > 0) {
+                for (File file : files) {
+                    importTexts(file.getAbsolutePath());
+                }
+            }
+        } else {
+            importTexts(v);
+        }
+    }
+
+    private void importTexts(String v) {
         if (new File(v).exists()) {
             String fileName = Shared.substringAfterLast(v, "/");
             fileName = Shared.substringBeforeLast(fileName, ".");
             fileName = getExternalStorageDocumentFile(this, fileName + ".db").getAbsolutePath();
+            if (new File(fileName).exists())
+                return;
             Notes notes = new Notes(this, fileName);
             String contents = null;
             try {
