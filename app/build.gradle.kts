@@ -9,13 +9,19 @@ android {
 
     defaultConfig {
         applicationId = "psycho.euphoria.translator"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
     }
-
+    externalNativeBuild {
+        cmake {
+            path = file("/src/main/jni/CMakeLists.txt")
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
