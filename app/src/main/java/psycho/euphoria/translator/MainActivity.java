@@ -288,7 +288,9 @@ public class MainActivity extends Activity {
                     final float y = event.getY();
                     if (x < 132) {//
                         navigateToPreviousPage();
-                        takePhotos();
+                        if (y > 2000) {
+                            takePhotos();
+                        }
                         return true;
                     }
                     if (x > 1080 - 132) {
