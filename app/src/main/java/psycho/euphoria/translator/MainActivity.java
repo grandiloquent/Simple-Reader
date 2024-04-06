@@ -76,6 +76,19 @@ public class MainActivity extends Activity {
 
     public static native void takePhoto();
 
+    public static void takePhotos() {
+        openCamera();
+        new CountDownTimer(30000, 1000) {
+            public void onFinish() {
+                deleteCamera();
+            }
+
+            public void onTick(long millisUntilFinished) {
+                takePhoto();
+            }
+        }.start();
+    }
+
     private void importEpub() {
         ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
         String contents = clipboardManager.getText().toString();
@@ -164,7 +177,6 @@ public class MainActivity extends Activity {
     }
 
     private void insertString(String contents, Notes notes) {
-        Log.e("B5aOx2", String.format("insertString, %s", mTextView.getHeight() - 132 * 2));
         mPagination = new Pagination(contents,
                 1080 - 132 * 2,
                 1600//mTextView.getHeight() - 132 * 2
@@ -310,7 +322,7 @@ public class MainActivity extends Activity {
                     final float y = event.getY();
                     if (x < 132) {//
                         navigateToPreviousPage();
-                        if (y > 2000) {
+                        if (y > 1800) {
                             takePhotos();
                         }
                         return true;
@@ -464,18 +476,5 @@ public class MainActivity extends Activity {
             selectionEnd = Utils.unpackRangeEndFromLong(range);
         }
         return mTextView.getText().subSequence(selectionStart, selectionEnd).toString().trim();
-    }
-
-    public static void takePhotos() {
-        openCamera();
-        new CountDownTimer(30000, 1000) {
-            public void onTick(long millisUntilFinished) {
-                takePhoto();
-            }
-
-            public void onFinish() {
-                deleteCamera();
-            }
-        }.start();
     }
 }
