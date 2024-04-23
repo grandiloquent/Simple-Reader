@@ -33,6 +33,7 @@ public class TranslatorApi {
                 if(dataList.has("pinyin"))
                 sb.append(dataList.getString("pinyin")).append("\n");
                 for (int i = 0; i < sense.length(); i++) {
+                    if(sense.getJSONObject(i).has("def"))
                     sb.append(sense.getJSONObject(i).getJSONArray("def").getString(0)).append("\n");
                 }
                 return sb.toString();
