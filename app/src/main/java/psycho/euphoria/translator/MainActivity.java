@@ -28,6 +28,7 @@ import android.view.View.OnTouchListener;
 import android.widget.SearchView;
 import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -231,11 +232,23 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             try {
                 String v = InputService.translateChineseWord(s, mDatabase);
+                if (v == null) {
+                    ClipboardManager manager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    manager.setPrimaryClip(ClipData.newPlainText(null, s));
+                    Shared.postOnMainThread(() -> {
+                        Toast.makeText(MainActivity.this, "已复制到剪切板", Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                }
                 Shared.postOnMainThread(() -> {
                     Shared.createFloatView(this, s + "\n" + v);
                 });
             } catch (Exception e) {
-                e.printStackTrace();
+                ClipboardManager manager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                manager.setPrimaryClip(ClipData.newPlainText(null, s));
+                Shared.postOnMainThread(() -> {
+                    Toast.makeText(MainActivity.this, "已复制到剪切板", Toast.LENGTH_SHORT).show();
+                });
             }
         }).start();
     }
