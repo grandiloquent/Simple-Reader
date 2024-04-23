@@ -15,7 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
 
 public class TranslatorApi {
-    private final static Pattern mChinese = Pattern.compile("[\\u4e00-\\u9fa5]");
+    public final static Pattern mChinese = Pattern.compile("[\\u4e00-\\u9fa5]");
 
     public static String translateChinese(String q) throws Exception {
         boolean isChinese = mChinese.matcher(q).find();

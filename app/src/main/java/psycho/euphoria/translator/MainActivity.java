@@ -228,10 +228,30 @@ public class MainActivity extends Activity {
         }
     }
 
+    private String trans(String s) {
+        if (s.length() > 1 && TranslatorApi.mChinese.matcher(s).find()) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < s.length(); i++) {
+                try {
+                    sb.append(InputService.translateChineseWord(s.substring(i, i + 1), mDatabase))
+                            .append("\n");
+                } catch (Exception e) {
+                }
+            }
+            return sb.toString();
+        } else {
+            try {
+                return InputService.translateChineseWord(s, mDatabase);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
+
     private void translate(String s) {
         new Thread(() -> {
             try {
-                String v = InputService.translateChineseWord(s, mDatabase);
+                String v = trans(s);
                 if (v == null) {
                     ClipboardManager manager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                     manager.setPrimaryClip(ClipData.newPlainText(null, s));
