@@ -26,15 +26,17 @@ public class TranslatorApi {
         JSONObject obj = new JSONObject(s);
         if (isChinese) {
             if (obj.has("newhh")) {
-                JSONObject dataList = obj.getJSONObject("newhh")
-                        .getJSONArray("dataList").getJSONObject(0);
-                JSONArray sense = dataList.getJSONArray("sense");
+                JSONArray dataList = obj.getJSONObject("newhh")
+                        .getJSONArray("dataList");
                 StringBuffer sb = new StringBuffer();
-                if(dataList.has("pinyin"))
-                sb.append(dataList.getString("pinyin")).append("\n");
-                for (int i = 0; i < sense.length(); i++) {
-                    if(sense.getJSONObject(i).has("def"))
-                    sb.append(sense.getJSONObject(i).getJSONArray("def").getString(0)).append("\n");
+                for (int i = 0; i <dataList.length() ; i++) {
+                    JSONArray sense = dataList.getJSONObject(i).getJSONArray("sense");
+                    if(dataList.getJSONObject(i).has("pinyin"))
+                        sb.append(dataList.getJSONObject(i).getString("pinyin")).append("\n");
+                    for (int j = 0; j < sense.length(); j++) {
+                        if(sense.getJSONObject(j).has("def"))
+                            sb.append(sense.getJSONObject(j).getJSONArray("def").getString(0)).append("\n");
+                    }
                 }
                 return sb.toString();
 

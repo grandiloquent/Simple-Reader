@@ -1570,12 +1570,12 @@ public class Shared {
         //添加mFloatLayout
         windowManager.addView(layout, params);
         ((TextView) layout.findViewById(R.id.dst)).setText(s);
-        layout.findViewById(R.id.layout)
-                .setOnClickListener(v -> {
-                    ClipboardManager manager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-                    manager.setPrimaryClip(ClipData.newPlainText(null, s));
-                    Toast.makeText(context, "已复制到剪切板", Toast.LENGTH_SHORT).show();
-                });
+//        layout.findViewById(R.id.layout)
+//                .setOnClickListener(v -> {
+//                    ClipboardManager manager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+//                    manager.setPrimaryClip(ClipData.newPlainText(null, s));
+//                    Toast.makeText(context, "已复制到剪切板", Toast.LENGTH_SHORT).show();
+//                });
         layout.setOnClickListener(v -> windowManager.removeView(layout));
 //        int w = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
 //        int h = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
