@@ -37,12 +37,12 @@ import java.util.regex.Pattern;
 // InputServiceHelper
 public class InputService extends InputMethodService implements KeyboardView.OnKeyboardActionListener {
 
+    private final Pattern mChinese = Pattern.compile("[\\u4e00-\\u9fa5]");
     private KeyboardView kv;
     private Keyboard keyboard;
     private String mCurrentString = "";
-
     private boolean caps = false;
-    private final Pattern mChinese = Pattern.compile("[\\u4e00-\\u9fa5]");
+    private Database mDatabase;
 
     public static String readAssetAsString(Context context, String assetName) {
         InputStream inputStream = null;
@@ -66,8 +66,6 @@ public class InputService extends InputMethodService implements KeyboardView.OnK
         return null;
     }
 
-    private Database mDatabase;
-
     public static String translate(String to, String q) throws Exception {
         URL url = new URL("http://kingpunch.cn/translate?to=" + to + "&q=" + Uri.encode(q));
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -84,6 +82,84 @@ public class InputService extends InputMethodService implements KeyboardView.OnK
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < sentences.length(); i++) {
             stringBuilder.append(sentences.getJSONObject(i).getString("trans")).append('\n');
+        }
+        return stringBuilder.toString();
+    }
+
+    public static String translateChineseWord(String q, Database database) throws Exception {
+        String result = database.query(q);
+        if (result != null) {
+            return result;
+        }
+        result = TranslatorApi.translateChinese(q);
+        if (result != null && !result.isEmpty()) {
+            database.insert(q, result);
+        }
+        return result;
+    }
+
+    public static String translateCollegiate(String q, Database database) throws Exception {
+        String result = database.query(q);
+        if (result != null) {
+            return result;
+        }
+        String catchData = "https://dictionaryapi.com/api/v3/references/collegiate/json/" +
+                Uri.encode(q) + "?key=82b5749d-12a6-499f-a916-d9b85d400161";
+        URL url = new URL(catchData);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        InputStream is = connection.getInputStream();
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        String line = in.readLine();
+        StringBuffer json = new StringBuffer();
+        while (line != null) {
+            json.append(line);
+            line = in.readLine();
+        }
+        JSONArray jsonArray = new JSONArray(String.valueOf(json));
+        JSONObject jsonObject = jsonArray.getJSONObject(0);
+        JSONArray shortdefarray = jsonObject.getJSONArray("shortdef");
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < shortdefarray.length(); i++) {
+            stringBuilder.append(shortdefarray.getString(i)).append('\n');
+        }
+        if (stringBuilder.toString().length() > 0) {
+            database.insert(q, stringBuilder.toString());
+        }
+        return stringBuilder.toString();
+    }
+
+    public static String translateWord(String q, Database database) throws Exception {
+        String result = database.query(q);
+        if (result != null) {
+            return result;
+        }
+        String catchData = "https://dictionaryapi.com/api/v3/references/learners/json/" +
+                Uri.encode(q) + "?key=cfb57e42-44bb-449d-aa59-1a61d2ca31f0";
+        URL url = new URL(catchData);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        InputStream is = connection.getInputStream();
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        String line = in.readLine();
+        StringBuffer json = new StringBuffer();
+        while (line != null) {
+            json.append(line);
+            line = in.readLine();
+        }
+        if (json.indexOf("\"shortdef\"") == -1) {
+            return null;
+        }
+        JSONArray jsonArray = new JSONArray(String.valueOf(json));
+        JSONObject jsonObject = jsonArray.getJSONObject(0);
+        if (jsonObject == null) {
+            return null;
+        }
+        JSONArray shortdefarray = jsonObject.getJSONArray("shortdef");
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < shortdefarray.length(); i++) {
+            stringBuilder.append(shortdefarray.getString(i)).append('\n');
+        }
+        if (stringBuilder.toString().length() > 0) {
+            database.insert(q, stringBuilder.toString());
         }
         return stringBuilder.toString();
     }
@@ -141,86 +217,8 @@ public class InputService extends InputMethodService implements KeyboardView.OnK
         mDatabase = new Database(this,
                 new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "psycho.db").getAbsolutePath());
 
-    }
 
-    public static String translateWord(String q, Database database) throws Exception {
-        String result = database.query(q);
-        if (result != null) {
-            return result;
-        }
-        String catchData = "https://dictionaryapi.com/api/v3/references/learners/json/" +
-                Uri.encode(q) + "?key=cfb57e42-44bb-449d-aa59-1a61d2ca31f0";
-        URL url = new URL(catchData);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        InputStream is = connection.getInputStream();
-        BufferedReader in = new BufferedReader(new InputStreamReader(is));
-        String line = in.readLine();
-        StringBuffer json = new StringBuffer();
-        while (line != null) {
-            json.append(line);
-            line = in.readLine();
-        }
-        if (json.indexOf("\"shortdef\"") == -1) {
-            return null;
-        }
-        JSONArray jsonArray = new JSONArray(String.valueOf(json));
-        JSONObject jsonObject = jsonArray.getJSONObject(0);
-        if (jsonObject == null) {
-            return null;
-        }
-        JSONArray shortdefarray = jsonObject.getJSONArray("shortdef");
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < shortdefarray.length(); i++) {
-            stringBuilder.append(shortdefarray.getString(i)).append('\n');
-        }
-        if (stringBuilder.toString().length() > 0) {
-            database.insert(q, stringBuilder.toString());
-        }
-        return stringBuilder.toString();
     }
-
-    public static String translateChineseWord(String q, Database database) throws Exception {
-        String result = database.query(q);
-        if (result != null) {
-            return result;
-        }
-        result = TranslatorApi.translateChinese(q);
-        if (result != null && !result.isEmpty()) {
-            database.insert(q, result);
-        }
-        return result;
-    }
-
-    public static String translateCollegiate(String q, Database database) throws Exception {
-        String result = database.query(q);
-        if (result != null) {
-            return result;
-        }
-        String catchData = "https://dictionaryapi.com/api/v3/references/collegiate/json/" +
-                Uri.encode(q) + "?key=82b5749d-12a6-499f-a916-d9b85d400161";
-        URL url = new URL(catchData);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        InputStream is = connection.getInputStream();
-        BufferedReader in = new BufferedReader(new InputStreamReader(is));
-        String line = in.readLine();
-        StringBuffer json = new StringBuffer();
-        while (line != null) {
-            json.append(line);
-            line = in.readLine();
-        }
-        JSONArray jsonArray = new JSONArray(String.valueOf(json));
-        JSONObject jsonObject = jsonArray.getJSONObject(0);
-        JSONArray shortdefarray = jsonObject.getJSONArray("shortdef");
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < shortdefarray.length(); i++) {
-            stringBuilder.append(shortdefarray.getString(i)).append('\n');
-        }
-        if (stringBuilder.toString().length() > 0) {
-            database.insert(q, stringBuilder.toString());
-        }
-        return stringBuilder.toString();
-    }
-
 
     @Override
     public View onCreateInputView() {
@@ -303,9 +301,12 @@ public class InputService extends InputMethodService implements KeyboardView.OnK
             super(context, name, null, 1);
         }
 
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-            db.execSQL("create table if not exists words (_id integer primary key,word text unique, en text, create_at integer)");
+        public void insert(String word, String en) {
+            ContentValues values = new ContentValues();
+            values.put("word", word);
+            values.put("en", en);
+            values.put("create_at", System.currentTimeMillis());
+            getWritableDatabase().insert("words", null, values);
         }
 
         public String query(String word) {
@@ -318,12 +319,9 @@ public class InputService extends InputMethodService implements KeyboardView.OnK
             return result;
         }
 
-        public void insert(String word, String en) {
-            ContentValues values = new ContentValues();
-            values.put("word", word);
-            values.put("en", en);
-            values.put("create_at", System.currentTimeMillis());
-            getWritableDatabase().insert("words", null, values);
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            db.execSQL("create table if not exists words (_id integer primary key,word text unique, en text, create_at integer)");
         }
 
         @Override

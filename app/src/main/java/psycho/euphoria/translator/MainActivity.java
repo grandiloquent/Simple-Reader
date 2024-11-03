@@ -10,7 +10,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
@@ -18,6 +21,9 @@ import android.os.CountDownTimer;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
@@ -25,6 +31,8 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.SearchView;
 import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
@@ -311,7 +319,7 @@ public class MainActivity extends Activity {
         if (checkSelfPermission(permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             permissions.add(permission.CAMERA);
         }
-        if(checkSelfPermission(permission.WRITE_EXTERNAL_STORAGE)!=PackageManager.PERMISSION_GRANTED){
+        if (checkSelfPermission(permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             permissions.add(permission.WRITE_EXTERNAL_STORAGE);
         }
         if (!permissions.isEmpty()) {
@@ -396,6 +404,21 @@ public class MainActivity extends Activity {
                 startActivityForResult(intent, 0);
             }
         }
+        mTextView.setBackgroundColor(Color.BLACK);
+        mTextView.setTextColor(0xFF999999);
+        //getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
+        //getActionBar().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
+//        int actionBarTitleId = Resources.getSystem().getIdentifier("action_bar_title", "id", "android");
+//        if (actionBarTitleId > 0) {
+//            TextView title = (TextView) findViewById(actionBarTitleId);
+//            if (title != null) {
+//                title.setTextColor(0xFF999999);
+//            }
+//        }
+//        getWindow().setNavigationBarColor(Color.TRANSPARENT);
+//        getWindow().setStatusBarColor(Color.BLACK);
+        //getWindow().getDecorView().setSystemUiVisibility(0);
+        //getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
     }
 
     @Override
