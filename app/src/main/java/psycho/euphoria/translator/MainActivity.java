@@ -134,6 +134,7 @@ public class MainActivity extends Activity {
         String v = clipboardManager.getText().toString();
         File f = new File(v);
         if (f.exists()) {
+
             f = f.getParentFile();
             File[] files = f.listFiles(new FileFilter() {
                 @Override
@@ -143,6 +144,13 @@ public class MainActivity extends Activity {
             });
             if (files != null && files.length > 0) {
                 for (File file : files) {
+                    File finalF = file;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, finalF.getName(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
                     importTexts(file.getAbsolutePath());
                 }
             }
@@ -446,7 +454,7 @@ public class MainActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case SEARCH_REQUEST_CODE:
-                importFile();
+                new Thread(this::importFile).start();
                 break;
             case 2:
                 String[] ids = mNotes.getIds().toArray(new String[0]);
