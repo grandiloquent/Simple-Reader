@@ -447,6 +447,8 @@ public class MainActivity extends Activity {
         menu.add(0, 5, 0, "清空");
         menu.add(0, 8, 0, "书籍");
         menu.add(0, 9, 0, "复制");
+        menu.add(0, 10, 0, "词典");
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -481,6 +483,10 @@ public class MainActivity extends Activity {
                 break;
             case 5:
                 mNotes.removeAll();
+                break;
+            case 10:
+                Intent dic = new Intent(MainActivity.this, DictionaryActivity.class);
+                startActivity(dic);
                 break;
         }
         return super.onOptionsItemSelected(item);
