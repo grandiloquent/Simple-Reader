@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -70,7 +71,7 @@ public class MainActivity extends Activity {
   */
         System.loadLibrary("nativelib");
     }
-
+    public static final int DEFAULT_PORT = 8080;
     TextView mTextView;
     private Database mDatabase;
     private Notes mNotes;
@@ -97,6 +98,8 @@ public class MainActivity extends Activity {
             }
         }.start();
     }
+    public static native String startServer(Context context, AssetManager assetManager, String host, int port);
+
 
     private void importEpub() {
         ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);

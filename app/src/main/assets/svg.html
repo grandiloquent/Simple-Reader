@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG 编辑器</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+    <script async src="https://fastly.jsdelivr.net/npm/js-beautify@1.14.11/js/lib/beautify.min.js"></script>
+    <script async src="https://fastly.jsdelivr.net/npm/js-beautify@1.14.11/js/lib/beautify-css.min.js"></script>
+    <script async src="https://fastly.jsdelivr.net/npm/js-beautify@1.14.11/js/lib/beautify-html.min.js"></script>
+    <link rel="stylesheet" href="svg.css">
+    <script src="custom-toast.js"></script>
+    <script src="shared.js"></script>
+</head>
+<body>
+    <div class="wrapper" style="padding: 49px 0 49px 0;">
+        <textarea id="textarea" style="font-size: 16px"></textarea>
+    </div>
+    <div class="bar-renderer top" style="top: 0;">
+    </div>
+    <div class="bar-renderer bottom">
+    </div>
+    <custom-toast id="toast"></custom-toast>
+</body>
+<script src="custom-dialog.js"></script>
+<script src="utils.js"></script>
+<script src="svg.js"></script>
+</html>

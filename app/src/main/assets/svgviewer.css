@@ -1,0 +1,176 @@
+html {
+    font-family: -apple-system-font, BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB, Microsoft YaHei UI, Microsoft YaHei, Arial, sans-serif;
+    color: #3f3f3f;
+}
+
+body {
+    padding: 20px 20px 0 20px;
+    margin-top: 10px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    box-sizing: inherit;
+    color: #000;
+    margin: 0 0 20px 0;
+    overflow-x: clip;
+    text-overflow: ellipsis;
+    display: inline;
+    margin-top: 0;
+    vertical-align: middle;
+    letter-spacing: -0.5px;
+    font-weight: 600;
+    font-size: 40px;
+    line-height: 48px;
+    display: block;
+}
+
+h2 {
+    margin: 56px 0 16px 0;
+    font-size: 24px;
+    line-height: 32px;
+}
+
+h3 {
+    margin: 32px 0 16px 0;
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 500;
+}
+
+h4 {
+    margin: 32px 0 16px 0;
+    font-size: 18px;
+    line-height: 28px;
+    font-weight: 500;
+}
+
+img {
+    border-radius: 4px;
+    display: block;
+    margin: 0.1em auto 0.5em;
+    max-width: 100% !important
+}
+
+p {
+    font-size: 16px;
+    margin: 16px 0;
+    padding: 0;
+    line-height: 24px;
+}
+
+ol,
+ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+ul {
+    list-style: disc outside
+}
+
+ol {
+    list-style: decimal outside
+}
+
+ol ol {
+    list-style-type: lower-alpha
+}
+
+ol ol ol {
+    list-style-type: lower-roman
+}
+
+ul {
+    list-style: disc outside
+}
+
+li,
+li p {
+    margin: 12px 0;
+    padding: 0
+}
+
+
+
+strong {
+    text-align: left;
+    line-height: 1.75;
+    color: rgba(15, 76, 129, 1);
+    font-weight: bold
+}
+
+/* code {
+    text-align: left;
+    line-height: 1.75;
+    font-size: 90%;
+    color: #d14;
+    background: rgba(27, 31, 35, .05);
+    padding: 3px 5px;
+    border-radius: 4px
+} */
+a{
+    color: #174ea6;
+    text-decoration: none;
+    outline: 0;
+    word-break: break-word
+}
+a:focus,
+a:hover {
+    color: #174ea6;
+    text-decoration: underline;
+}
+code{
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font: 500 90% / 1em Consolas, Roboto Mono, monospace;
+    word-break: break-word;
+    background-color:rgb(248, 249, 250);
+    color:rgb(55, 71, 79);
+    padding: 1px 4px;
+}
+pre {
+    font: 14px/20px Consolas,Roboto Mono, monospace;
+    margin: 16px 0;
+    overflow-x: auto;
+    padding: 12px;
+    position: relative;
+    background-color:rgb(248, 249, 250);
+    color:rgb(55, 71, 79);
+    border-radius: 8px;
+    border: 1px solid #e8eaed;
+}
+pre code {
+    background: 0;
+    border: 0;
+    font-size: 14px;
+    padding: 0
+}
+.toc {
+    padding-left: 12px;
+    border-left: 4px solid rgb(52, 168, 83);
+    list-style: none;
+}
+
+.toc li {
+    margin: 0;
+    padding: 0;
+    line-height: 16px;
+    font-size: 13px;
+}
+
+.toc a {
+    color: rgb(32, 33, 36);
+    display: flex;
+    padding: 4px 0;
+    text-decoration: none;
+}
+
+.toc a:focus,
+.toc a:hover {
+    text-decoration: none
+}
