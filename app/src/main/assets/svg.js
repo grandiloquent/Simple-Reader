@@ -38,7 +38,7 @@ const items = [
             // if (typeof NativeAndroid !== 'undefined') {
             //     NativeAndroid.launchApp("psycho.euphoria.l", `/svgviewer?id=${id}`);
             // } else {
-            //     window.open(`${baseUri}/svgviewer?id=${id}`, '_blank');
+               window.open(`${baseUri}/svgviewer?id=${id}`, '_blank');
             // }
         }
     ], [

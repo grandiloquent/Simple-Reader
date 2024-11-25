@@ -1128,7 +1128,7 @@ public class Shared {
 
     public static String substringBefore(String string, String delimiter) {
         int index = string.indexOf(delimiter);
-        if (index != -1) return string.substring(0, index );
+        if (index != -1) return string.substring(0, index);
         return string;
     }
 
@@ -1587,6 +1587,15 @@ public class Shared {
     public static void setText(Context context, String string) {
         ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
         clipboardManager.setPrimaryClip(ClipData.newPlainText(null, string));
+    }
+
+    public static String getText(Context context) {
+        ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        CharSequence sequence = clipboardManager.getText();
+        if (sequence == null) {
+            return null;
+        }
+        return sequence.toString();
     }
 }
 

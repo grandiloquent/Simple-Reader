@@ -62,7 +62,7 @@ public class TranslatorApi {
         return null;
     }
 
-    private static String createTranslationURI(String query) throws URISyntaxException {
+   public static String createTranslationURI(String query) throws URISyntaxException {
         Uri.Builder builder = new Uri.Builder();
         String salt = String.valueOf(System.currentTimeMillis());
         builder.scheme("http")

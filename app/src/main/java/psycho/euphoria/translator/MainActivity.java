@@ -48,6 +48,9 @@ import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -55,6 +58,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -62,6 +68,7 @@ import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import psycho.euphoria.translator.InputService.Database;
@@ -441,7 +448,21 @@ public class MainActivity extends Activity {
                         navigateToNextPage();
                         return true;
                     }
-                    String s = getWordTouched(x, y, wordIterator);
+                    int[] positions = getWordTouched(x, y, wordIterator);
+                    if (mIsCopyLine) {
+                        int i = positions[0];
+                        int j = positions[1];
+                        String ss = mTextView.getText().toString();
+                        while (i > 0 && (ss.charAt(i - 1) != '.' && ss.charAt(i - 1) != '。')) {
+                            i--;
+                        }
+                        while (j < ss.length() && (ss.charAt(j) != '.' && ss.charAt(j) != '。')) {
+                            j++;
+                        }
+                        Log.e("B5aOx2", String.format("onCreate, %s", ss.substring(i, j)));
+                        Shared.setText(this, ss.substring(i, j));
+                    }
+                    String s = mTextView.getText().subSequence(positions[0], positions[1]).toString().trim();
                     if (s.length() > 0) {
                         translate(s);
                     }
@@ -491,6 +512,8 @@ public class MainActivity extends Activity {
         launchServer(this);
     }
 
+    private boolean mIsCopyLine;
+
     @Override
     protected void onPause() {
         saveSet();
@@ -527,19 +550,21 @@ public class MainActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         createSearchView(menu);
-        MenuItem menuItem2 = menu.add(0, 7, 0, "上一页");
+        MenuItem menuItem2 = menu.add(0, 7, 0, "收藏");
         //menuItem2.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        MenuItem menuItem1 = menu.add(0, 3, 0, "下一页");
-        //menuItem1.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        //menuItem1
         menu.add(0, SEARCH_REQUEST_CODE, 0, "文本");
         menu.add(0, 2, 0, "列表");
-        menu.add(0, 5, 0, "清空");
         menu.add(0, 8, 0, "书籍");
         menu.add(0, 9, 0, "复制");
         menu.add(0, 10, 0, "词典");
+        menu.add(0, 5, 0, "刷新");
         menu.add(0, 11, 0, "首页").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         menu.add(0, 12, 0, "笔记").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         menu.add(0, 13, 0, "搜索").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, 3, 0, "历史");
+        menu.add(0, 14, 0, "复制").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, 15, 0, "翻译").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -558,10 +583,19 @@ public class MainActivity extends Activity {
                 }).show();
                 break;
             case 3:
-                navigateToNextPage();
+                if (getVisibilityWebView() != null) {
+                    String url = PreferenceManager.getDefaultSharedPreferences(this)
+                            .getString("fav", null);
+                    if (url != null)
+                        getVisibilityWebView().loadUrl(url);
+                }
                 break;
             case 7:
-                navigateToPreviousPage();
+                if (getVisibilityWebView() != null) {
+                    PreferenceManager.getDefaultSharedPreferences(this)
+                            .edit().putString("fav", getVisibilityWebView().getUrl()).apply();
+                }
+                //navigateToPreviousPage();
                 break;
             case 8:
                 Intent intent = new Intent(MainActivity.this, BooksActivity.class);
@@ -569,9 +603,6 @@ public class MainActivity extends Activity {
                 break;
             case 9:
                 getSystemService(ClipboardManager.class).setPrimaryClip(ClipData.newPlainText(null, mTextView.getText()));
-                break;
-            case 5:
-                mNotes.removeAll();
                 break;
             case 10:
                 Intent dic = new Intent(MainActivity.this, DictionaryActivity.class);
@@ -602,8 +633,69 @@ public class MainActivity extends Activity {
                 if (mWebView2.getUrl() == null)
                     mWebView2.loadUrl("https://www.google.com/search?q=");
                 break;
+            case 5:
+                if (getVisibilityWebView() != null)
+                    getVisibilityWebView().reload();
+                break;
+            case 14:
+                mIsCopyLine = !mIsCopyLine;
+                break;
+            case 15:
+                translate();
+                break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void translate() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    //byte[] postData = Uri.encode(Shared.getText(MainActivity.this)).getBytes(StandardCharsets.UTF_8);
+                    //int postDataLength = postData.length;
+                    String request =TranslatorApi.createTranslationURI(Shared.getText(MainActivity.this)); //"http://fanyi.youdao.com/translate?doctype=json&jsonversion=&type=&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=&abtest=";
+                    URL url = new URL(request);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//                    conn.setDoOutput(true);
+//                    conn.setInstanceFollowRedirects(false);
+//                    conn.setRequestMethod("POST");
+//                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+//                    conn.setRequestProperty("charset", "utf-8");
+//                    conn.setRequestProperty("Content-Length", Integer.toString(postDataLength));
+//                    conn.setUseCaches(false);
+//                    try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
+//                        wr.write(postData);
+//                    }
+                    JSONObject o=new JSONObject(Shared.readString(conn));
+                    JSONArray array= o.getJSONArray("translation");
+                    StringBuilder stringBuilder=new StringBuilder();
+                    for (int i = 0; i < array.length(); i++) {
+                        stringBuilder.append(array.getString(i)).append("\n");
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Shared.setText(MainActivity.this, stringBuilder.toString());
+                            Toast.makeText(MainActivity.this,
+                                    stringBuilder.toString()
+                                    , Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } catch (Exception e) {
+                }
+            }
+        }).start();
+    }
+
+    private WebView getVisibilityWebView() {
+        if (mWebView1 != null && mWebView1.getVisibility() == View.VISIBLE) {
+            return mWebView1;
+        }
+        if (mWebView2 != null && mWebView2.getVisibility() == View.VISIBLE) {
+            return mWebView2;
+        }
+        return null;
     }
 
     native void cameraPreview();
@@ -646,7 +738,7 @@ public class MainActivity extends Activity {
         saveSet();
     }
 
-    String getWordTouched(float x, float y, WordIterator wordIterator) {
+    int[] getWordTouched(float x, float y, WordIterator wordIterator) {
         int t = mTextView.getOffsetForPosition(x, y);
         long lastTouchOffsets = Utils.packRangeInLong(t, t);
         final int minOffset = Utils.unpackRangeStartFromLong(lastTouchOffsets);
@@ -661,7 +753,7 @@ public class MainActivity extends Activity {
             selectionStart = Utils.unpackRangeStartFromLong(range);
             selectionEnd = Utils.unpackRangeEndFromLong(range);
         }
-        return mTextView.getText().subSequence(selectionStart, selectionEnd).toString().trim();
+        return new int[]{selectionStart, selectionEnd};
     }
 
 }
