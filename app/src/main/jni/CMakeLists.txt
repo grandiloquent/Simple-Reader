@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.10.2)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -fno-rtti -fexceptions -Wall")
 
+set(distribution_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../distribution)
+
+add_library(lib_crypto SHARED IMPORTED)
+set_target_properties(lib_crypto PROPERTIES IMPORTED_LOCATION
+        ${distribution_DIR}/openssl/lib/libcrypto_3.so)
+add_library(lib_ssl SHARED IMPORTED)
+set_target_properties(lib_ssl PROPERTIES IMPORTED_LOCATION
+        ${distribution_DIR}/openssl/lib/libssl_3.so)
 
 add_library(nativelib SHARED
         nativelib.cpp
@@ -35,4 +43,5 @@ target_link_libraries(server httplib shared android sqlite3 nlohmann_json::nlohm
 target_link_libraries(nativelib
         android
         camera2ndk
-        mediandk)
+        mediandk
+        server)

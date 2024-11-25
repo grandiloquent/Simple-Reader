@@ -1,6 +1,7 @@
 package psycho.euphoria.translator;
 
 import android.Manifest.permission;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
@@ -27,13 +28,21 @@ import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.DownloadListener;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.widget.FrameLayout;
+import android.widget.FrameLayout.LayoutParams;
 import android.widget.SearchView;
 import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
@@ -61,6 +70,7 @@ import static psycho.euphoria.translator.Utils.getExternalStorageDocumentFile;
 import static psycho.euphoria.translator.Utils.requestManageAllFilePermission;
 
 public class MainActivity extends Activity {
+    public static final int DEFAULT_PORT = 8080;
     public static final String KEY_NOTES = "notes";
     public static final String KEY_Q = "q";
     public static final int SEARCH_REQUEST_CODE = 1;
@@ -71,7 +81,7 @@ public class MainActivity extends Activity {
   */
         System.loadLibrary("nativelib");
     }
-    public static final int DEFAULT_PORT = 8080;
+
     TextView mTextView;
     private Database mDatabase;
     private Notes mNotes;
@@ -79,10 +89,60 @@ public class MainActivity extends Activity {
     private Pagination mPagination;
     private BlobCache mBlobCache;
     String mFile;
+    private FrameLayout mFrameLayout;
+    private WebView mWebView1;
+    private WebView mWebView2;
+    CustomWebChromeClient mCustomWebChromeClient1;
+    CustomWebChromeClient mCustomWebChromeClient2;
 
     public static native void deleteCamera();
 
+    public static WebView initializeWebView(MainActivity context) {
+        WebView webView = new WebView(context);
+        webView.addJavascriptInterface(new WebAppInterface(context), "NativeAndroid");
+        webView.setWebViewClient(new CustomWebViewClient(context));
+        return webView;
+    }
+
+    public static void launchServer(MainActivity context) {
+        Intent intent = new Intent(context, AppService.class);
+        context.startService(intent);
+    }
+
     public static native void openCamera();
+
+    @SuppressLint("SetJavaScriptEnabled")
+    public void setWebView(WebView webView) {
+        WebSettings settings = webView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setUserAgentString("Mozilla/5.0 (Linux; Android 9; SM-G950N) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/88.0.4324.93 Mobile Safari/537.36");
+        //settings.setUserAgentString(USER_AGENT);
+        settings.setSupportZoom(false);
+        webView.setDownloadListener(new DownloadListener() {
+
+            @Override
+            public void onDownloadStart(String url, String userAgent,
+                                        String contentDisposition, String mimetype,
+                                        long contentLength) {
+                //Log.e("B5aOx2", String.format("onDownloadStart, %s\n%s", url,contentDisposition));
+                /*DownloadManager.Request request = new DownloadManager.Request(
+                        Uri.parse(url));
+                request.allowScanningByMediaScanner();
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED); //Notify client once download is completed!
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Name of your downloadble file goes here, example: Mathematics II ");
+                DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                dm.enqueue(request);
+                Toast.makeText(getApplicationContext(), "Downloading File", //To notify the Client that the file is being downloaded
+                        Toast.LENGTH_LONG).show();
+*/
+            }
+        });
+        registerForContextMenu(webView);
+    }
+
+    public static native String startServer(Context context, AssetManager assetManager, String host, int port);
 
     public static native void takePhoto();
 
@@ -98,15 +158,30 @@ public class MainActivity extends Activity {
             }
         }.start();
     }
-    public static native String startServer(Context context, AssetManager assetManager, String host, int port);
 
+    private void checkWebView1() {
+        if (mWebView1 != null) return;
+        mWebView1 = initializeWebView(this);
+        mCustomWebChromeClient1 = new CustomWebChromeClient(this);
+        mWebView1.setWebChromeClient(mCustomWebChromeClient1);
+        setWebView(mWebView1);
+        mFrameLayout.addView(mWebView1, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    private void checkWebView2() {
+        if (mWebView2 != null) return;
+        mWebView2 = initializeWebView(this);
+        mCustomWebChromeClient2 = new CustomWebChromeClient(this);
+        mWebView2.setWebChromeClient(mCustomWebChromeClient1);
+        setWebView(mWebView2);
+        mFrameLayout.addView(mWebView2, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
 
     private void importEpub() {
         ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
         String contents = clipboardManager.getText().toString();
         File dir = new File("/storage/emulated/0/Books/导入");
-        if (!dir.isDirectory())
-            dir.mkdirs();
+        if (!dir.isDirectory()) dir.mkdirs();
         if (new File(contents).exists()) {
             for (File d : dir.listFiles(new FileFilter() {
                 @Override
@@ -137,7 +212,6 @@ public class MainActivity extends Activity {
         String v = clipboardManager.getText().toString();
         File f = new File(v);
         if (f.exists()) {
-
             f = f.getParentFile();
             File[] files = f.listFiles(new FileFilter() {
                 @Override
@@ -167,8 +241,7 @@ public class MainActivity extends Activity {
             String fileName = Shared.substringAfterLast(v, "/");
             fileName = Shared.substringBeforeLast(fileName, ".");
             fileName = getExternalStorageDocumentFile(this, fileName + ".db").getAbsolutePath();
-            if (new File(fileName).exists())
-                return;
+            if (new File(fileName).exists()) return;
             Notes notes = new Notes(this, fileName);
             String contents = null;
             try {
@@ -183,28 +256,15 @@ public class MainActivity extends Activity {
     }
 
     private void insertString(String contents) {
-        mPagination = new Pagination(contents,
-                1080 - 132 * 2,
-                mTextView.getHeight() - 132
-                ,
-                mTextView.getPaint(),
-                mTextView.getLineSpacingMultiplier(),
-                mTextView.getLineSpacingExtra(),
-                mTextView.getIncludeFontPadding());
+        mPagination = new Pagination(contents, 1080 - 132 * 2, mTextView.getHeight() - 132, mTextView.getPaint(), mTextView.getLineSpacingMultiplier(), mTextView.getLineSpacingExtra(), mTextView.getIncludeFontPadding());
         for (int i = 0; i < mPagination.size(); i++) {
             mNotes.insertString(mPagination.get(i).toString());
         }
     }
 
     private void insertString(String contents, Notes notes) {
-        mPagination = new Pagination(contents,
-                1080 - 132 * 2,
-                1600//mTextView.getHeight() - 132 * 2
-                ,
-                mTextView.getPaint(),
-                mTextView.getLineSpacingMultiplier(),
-                mTextView.getLineSpacingExtra(),
-                mTextView.getIncludeFontPadding());
+        mPagination = new Pagination(contents, 1080 - 132 * 2, 1600//mTextView.getHeight() - 132 * 2
+                , mTextView.getPaint(), mTextView.getLineSpacingMultiplier(), mTextView.getLineSpacingExtra(), mTextView.getIncludeFontPadding());
         for (int i = 0; i < mPagination.size(); i++) {
             notes.insertString(mPagination.get(i).toString());
         }
@@ -252,8 +312,7 @@ public class MainActivity extends Activity {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < s.length(); i++) {
                 try {
-                    sb.append(InputService.translateChineseWord(s.substring(i, i + 1), mDatabase))
-                            .append("\n");
+                    sb.append(InputService.translateChineseWord(s.substring(i, i + 1), mDatabase)).append("\n");
                 } catch (Exception e) {
                 }
             }
@@ -310,15 +369,13 @@ public class MainActivity extends Activity {
             try {
                 byte[] datav = mBlobCache.lookup(mFile.hashCode());
                 if (datav != null) {
-                    DataInputStream dis = new DataInputStream(
-                            new ByteArrayInputStream(datav));
+                    DataInputStream dis = new DataInputStream(new ByteArrayInputStream(datav));
                     mIndex = dis.readInt();
                 }
             } catch (IOException e) {
             }
             loadSpecifiedPage();
-            PreferenceManager.getDefaultSharedPreferences(this).edit()
-                    .putString(KEY_NOTES, notes).apply();
+            PreferenceManager.getDefaultSharedPreferences(this).edit().putString(KEY_NOTES, notes).apply();
         }
     }
 
@@ -337,8 +394,7 @@ public class MainActivity extends Activity {
             requestPermissions(permissions.toArray(new String[0]), 0);
         }
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        mDatabase = new Database(this,
-                new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "psycho.db").getAbsolutePath());
+        mDatabase = new Database(this, new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "psycho.db").getAbsolutePath());
         String noteDatabaseDefaultFullPath = getExternalStorageDocumentFile(this, "notes.db").getAbsolutePath();
         mFile = preferences.getString(KEY_NOTES, noteDatabaseDefaultFullPath);
         if (!new File(mFile).exists()) {
@@ -347,12 +403,10 @@ public class MainActivity extends Activity {
         File cacheDir = getExternalCacheDir();
         String path = cacheDir.getAbsolutePath() + "/bookmark";
         try {
-            mBlobCache = new BlobCache(path, 100 * 10, 10 * 10 * 1024, false,
-                    1);
+            mBlobCache = new BlobCache(path, 100 * 10, 10 * 10 * 1024, false, 1);
             byte[] data = mBlobCache.lookup(mFile.hashCode());
             if (data != null) {
-                DataInputStream dis = new DataInputStream(
-                        new ByteArrayInputStream(data));
+                DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
                 mIndex = dis.readInt();
             }
         } catch (IOException e) {
@@ -360,16 +414,17 @@ public class MainActivity extends Activity {
         }
         mNotes = new Notes(this, mFile);
         setContentView(R.layout.main);
+        mFrameLayout = findViewById(R.id.root);
         mTextView = findViewById(R.id.text_view);
         final WordIterator wordIterator = new WordIterator();
         mTextView.setText(mNotes.queryContent(Integer.toString(mIndex)));
-        float dip = 48f;
-        Resources r = getResources();
-        float px = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                dip,
-                r.getDisplayMetrics()
-        );
+//        float dip = 48f;
+//        Resources r = getResources();
+//        float px = TypedValue.applyDimension(
+//                TypedValue.COMPLEX_UNIT_DIP,
+//                dip,
+//                r.getDisplayMetrics()
+//        );
         mTextView.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
@@ -430,6 +485,10 @@ public class MainActivity extends Activity {
 //        getWindow().setStatusBarColor(Color.BLACK);
         //getWindow().getDecorView().setSystemUiVisibility(0);
         //getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        File dir = new File(Environment.getExternalStorageDirectory(), ".editor");
+        if (!dir.isDirectory())
+            dir.mkdir();
+        launchServer(this);
     }
 
     @Override
@@ -439,19 +498,48 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onBackPressed() {
+        WebView webView = mWebView1;
+        if (mWebView2 != null && mWebView2.getVisibility() == View.VISIBLE) {
+            webView = mWebView2;
+        }
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack();
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        WebView webView = mWebView1;
+        if (mWebView2.getVisibility() == View.VISIBLE) {
+            webView = mWebView2;
+        }
+        final WebView.HitTestResult webViewHitTestResult = webView.getHitTestResult();
+        if (webViewHitTestResult.getType() == WebView.HitTestResult.IMAGE_TYPE ||
+                webViewHitTestResult.getType() == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+            Shared.setText(this, webViewHitTestResult.getExtra());
+        }
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         createSearchView(menu);
         MenuItem menuItem2 = menu.add(0, 7, 0, "上一页");
-        menuItem2.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        //menuItem2.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         MenuItem menuItem1 = menu.add(0, 3, 0, "下一页");
-        menuItem1.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        //menuItem1.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         menu.add(0, SEARCH_REQUEST_CODE, 0, "文本");
         menu.add(0, 2, 0, "列表");
         menu.add(0, 5, 0, "清空");
         menu.add(0, 8, 0, "书籍");
         menu.add(0, 9, 0, "复制");
         menu.add(0, 10, 0, "词典");
-
+        menu.add(0, 11, 0, "首页").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, 12, 0, "笔记").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, 13, 0, "搜索").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -463,12 +551,11 @@ public class MainActivity extends Activity {
                 break;
             case 2:
                 String[] ids = mNotes.getIds().toArray(new String[0]);
-                new AlertDialog.Builder(this)
-                        .setItems(ids, (dialog, which) -> {
-                            mIndex = Integer.parseInt(ids[which]);
-                            saveSet();
-                            mTextView.setText(mNotes.queryContent(ids[which]));
-                        }).show();
+                new AlertDialog.Builder(this).setItems(ids, (dialog, which) -> {
+                    mIndex = Integer.parseInt(ids[which]);
+                    saveSet();
+                    mTextView.setText(mNotes.queryContent(ids[which]));
+                }).show();
                 break;
             case 3:
                 navigateToNextPage();
@@ -481,8 +568,7 @@ public class MainActivity extends Activity {
                 startActivityForResult(intent, 2);
                 break;
             case 9:
-                getSystemService(ClipboardManager.class).setPrimaryClip(ClipData.newPlainText(null,
-                        mTextView.getText()));
+                getSystemService(ClipboardManager.class).setPrimaryClip(ClipData.newPlainText(null, mTextView.getText()));
                 break;
             case 5:
                 mNotes.removeAll();
@@ -490,6 +576,31 @@ public class MainActivity extends Activity {
             case 10:
                 Intent dic = new Intent(MainActivity.this, DictionaryActivity.class);
                 startActivity(dic);
+                break;
+            case 11:
+                if (mWebView1 != null)
+                    mWebView1.setVisibility(View.INVISIBLE);
+                if (mWebView2 != null)
+                    mWebView2.setVisibility(View.INVISIBLE);
+                mTextView.setVisibility(View.VISIBLE);
+                break;
+            case 12:
+                checkWebView1();
+                mWebView1.setVisibility(View.VISIBLE);
+                mTextView.setVisibility(View.INVISIBLE);
+                if (mWebView2 != null)
+                    mWebView2.setVisibility(View.INVISIBLE);
+                if (mWebView1.getUrl() == null || !mWebView1.getUrl().startsWith("http://0.0.0.0:8080"))
+                    mWebView1.loadUrl("http://0.0.0.0:8080");
+                break;
+            case 13:
+                checkWebView2();
+                mWebView2.setVisibility(View.VISIBLE);
+                mTextView.setVisibility(View.INVISIBLE);
+                if (mWebView1 != null)
+                    mWebView1.setVisibility(View.INVISIBLE);
+                if (mWebView2.getUrl() == null)
+                    mWebView2.loadUrl("https://www.google.com/search?q=");
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -502,7 +613,7 @@ public class MainActivity extends Activity {
         SearchView searchView = new SearchView(this);
         searchItem.setActionView(searchView);
         searchView.setIconified(true);
-        searchItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        //searchItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         searchView.setOnQueryTextListener(new OnQueryTextListener() {
             @Override
             public boolean onQueryTextChange(String newText) {
@@ -544,8 +655,7 @@ public class MainActivity extends Activity {
         int selectionStart, selectionEnd;
         selectionStart = wordIterator.getBeginning(minOffset);
         selectionEnd = wordIterator.getEnd(maxOffset);
-        if (selectionStart == BreakIterator.DONE || selectionEnd == BreakIterator.DONE ||
-                selectionStart == selectionEnd) {
+        if (selectionStart == BreakIterator.DONE || selectionEnd == BreakIterator.DONE || selectionStart == selectionEnd) {
             // Possible when the word iterator does not properly handle the text's language
             long range = Utils.getCharRange(mTextView.getText().toString(), minOffset);
             selectionStart = Utils.unpackRangeStartFromLong(range);
@@ -553,4 +663,5 @@ public class MainActivity extends Activity {
         }
         return mTextView.getText().subSequence(selectionStart, selectionEnd).toString().trim();
     }
+
 }

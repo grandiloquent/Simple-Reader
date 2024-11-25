@@ -1584,5 +1584,9 @@ public class Shared {
         //设置监听浮动窗口的触摸移动
     }
 
+    public static void setText(Context context, String string) {
+        ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        clipboardManager.setPrimaryClip(ClipData.newPlainText(null, string));
+    }
 }
 

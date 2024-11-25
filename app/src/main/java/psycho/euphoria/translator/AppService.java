@@ -19,7 +19,7 @@ public class AppService extends Service {
     public static final String KP_NOTIFICATION_CHANNEL_ID = "notes_notification_channel";
 
     public static void createNotification(AppService context) {
-        Notification notification = new Notification.Builder(context, KP_NOTIFICATION_CHANNEL_ID).setContentTitle("笔记")
+        Notification notification = new Notification.Builder(context, KP_NOTIFICATION_CHANNEL_ID).setContentTitle("翻译")
                 .setSmallIcon(android.R.drawable.stat_sys_download)
                 .addAction(getAction("关闭", getPendingIntent(context, ACTION_DISMISS)))
                 .setContentIntent(getPendingIntent(context, ACTION_APP))
@@ -51,9 +51,9 @@ public class AppService extends Service {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel(this);
-        String host = Shared.getDeviceIP(this);
+        //String host = Shared.getDeviceIP(this);
         new Thread(() -> {
-            MainActivity.startServer(this, getAssets(), host, MainActivity.DEFAULT_PORT);
+            MainActivity.startServer(this, getAssets(), "0.0.0.0", MainActivity.DEFAULT_PORT);
         }).start();
         createNotification(this);
 

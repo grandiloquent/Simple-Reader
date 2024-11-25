@@ -4,7 +4,7 @@
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 
-static const char db_name[] = "/storage/emulated/0/.editor/svg.db";
+static const char db_name[] = "/storage/emulated/0/.editor/translator.db";
 using db = sqlite::Database<db_name>;
 
 void serveFile(const std::filesystem::path &p, httplib::Response &res,
