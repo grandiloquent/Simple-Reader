@@ -101,6 +101,7 @@ public class MainActivity extends Activity {
     private WebView mWebView2;
     CustomWebChromeClient mCustomWebChromeClient1;
     CustomWebChromeClient mCustomWebChromeClient2;
+    private boolean mIsCopyLine;
 
     public static native void deleteCamera();
 
@@ -182,6 +183,16 @@ public class MainActivity extends Activity {
         mWebView2.setWebChromeClient(mCustomWebChromeClient1);
         setWebView(mWebView2);
         mFrameLayout.addView(mWebView2, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    private WebView getVisibilityWebView() {
+        if (mWebView1 != null && mWebView1.getVisibility() == View.VISIBLE) {
+            return mWebView1;
+        }
+        if (mWebView2 != null && mWebView2.getVisibility() == View.VISIBLE) {
+            return mWebView2;
+        }
+        return null;
     }
 
     private void importEpub() {
@@ -358,6 +369,47 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    private void translate() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    //byte[] postData = Uri.encode(Shared.getText(MainActivity.this)).getBytes(StandardCharsets.UTF_8);
+                    //int postDataLength = postData.length;
+                    String request =TranslatorApi.createTranslationURI(Shared.getText(MainActivity.this)); //"http://fanyi.youdao.com/translate?doctype=json&jsonversion=&type=&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=&abtest=";
+                    URL url = new URL(request);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//                    conn.setDoOutput(true);
+//                    conn.setInstanceFollowRedirects(false);
+//                    conn.setRequestMethod("POST");
+//                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+//                    conn.setRequestProperty("charset", "utf-8");
+//                    conn.setRequestProperty("Content-Length", Integer.toString(postDataLength));
+//                    conn.setUseCaches(false);
+//                    try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
+//                        wr.write(postData);
+//                    }
+                    JSONObject o=new JSONObject(Shared.readString(conn));
+                    JSONArray array= o.getJSONArray("translation");
+                    StringBuilder stringBuilder=new StringBuilder();
+                    for (int i = 0; i < array.length(); i++) {
+                        stringBuilder.append(array.getString(i)).append("\n");
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Shared.setText(MainActivity.this, stringBuilder.toString());
+                            Shared.postOnMainThread(() -> {
+                                Shared.createFloatView(MainActivity.this, stringBuilder.toString());
+                            });
+                        }
+                    });
+                } catch (Exception e) {
+                }
+            }
+        }).start();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -440,7 +492,7 @@ public class MainActivity extends Activity {
                     if (x < 132) {//
                         navigateToPreviousPage();
                         if (y > 1800) {
-                            takePhotos();
+
                         }
                         return true;
                     }
@@ -512,8 +564,6 @@ public class MainActivity extends Activity {
         launchServer(this);
     }
 
-    private boolean mIsCopyLine;
-
     @Override
     protected void onPause() {
         saveSet();
@@ -533,19 +583,19 @@ public class MainActivity extends Activity {
         super.onBackPressed();
     }
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        WebView webView = mWebView1;
-        if (mWebView2.getVisibility() == View.VISIBLE) {
-            webView = mWebView2;
-        }
-        final WebView.HitTestResult webViewHitTestResult = webView.getHitTestResult();
-        if (webViewHitTestResult.getType() == WebView.HitTestResult.IMAGE_TYPE ||
-                webViewHitTestResult.getType() == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
-            Shared.setText(this, webViewHitTestResult.getExtra());
-        }
-    }
+//    @Override
+//    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+//        super.onCreateContextMenu(menu, v, menuInfo);
+//        WebView webView = mWebView1;
+//        if (mWebView2.getVisibility() == View.VISIBLE) {
+//            webView = mWebView2;
+//        }
+//        final WebView.HitTestResult webViewHitTestResult = webView.getHitTestResult();
+//        if (webViewHitTestResult.getType() == WebView.HitTestResult.IMAGE_TYPE ||
+//                webViewHitTestResult.getType() == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+//            Shared.setText(this, webViewHitTestResult.getExtra());
+//        }
+//    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -639,63 +689,13 @@ public class MainActivity extends Activity {
                 break;
             case 14:
                 mIsCopyLine = !mIsCopyLine;
+                takePhotos();
                 break;
             case 15:
                 translate();
                 break;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private void translate() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    //byte[] postData = Uri.encode(Shared.getText(MainActivity.this)).getBytes(StandardCharsets.UTF_8);
-                    //int postDataLength = postData.length;
-                    String request =TranslatorApi.createTranslationURI(Shared.getText(MainActivity.this)); //"http://fanyi.youdao.com/translate?doctype=json&jsonversion=&type=&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=&abtest=";
-                    URL url = new URL(request);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//                    conn.setDoOutput(true);
-//                    conn.setInstanceFollowRedirects(false);
-//                    conn.setRequestMethod("POST");
-//                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-//                    conn.setRequestProperty("charset", "utf-8");
-//                    conn.setRequestProperty("Content-Length", Integer.toString(postDataLength));
-//                    conn.setUseCaches(false);
-//                    try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
-//                        wr.write(postData);
-//                    }
-                    JSONObject o=new JSONObject(Shared.readString(conn));
-                    JSONArray array= o.getJSONArray("translation");
-                    StringBuilder stringBuilder=new StringBuilder();
-                    for (int i = 0; i < array.length(); i++) {
-                        stringBuilder.append(array.getString(i)).append("\n");
-                    }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Shared.setText(MainActivity.this, stringBuilder.toString());
-                            Toast.makeText(MainActivity.this,
-                                    stringBuilder.toString()
-                                    , Toast.LENGTH_LONG).show();
-                        }
-                    });
-                } catch (Exception e) {
-                }
-            }
-        }).start();
-    }
-
-    private WebView getVisibilityWebView() {
-        if (mWebView1 != null && mWebView1.getVisibility() == View.VISIBLE) {
-            return mWebView1;
-        }
-        if (mWebView2 != null && mWebView2.getVisibility() == View.VISIBLE) {
-            return mWebView2;
-        }
-        return null;
     }
 
     native void cameraPreview();

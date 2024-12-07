@@ -14,7 +14,7 @@ async function initializeToolbars() {
         }
     } catch (error) {
         topIndexs = [15, 16, 18, 22, 20, 21, 2]
-        bottomIndexs = [1, 23, 24, 25, 26, 27, 28,29]
+        bottomIndexs = [1, 23, 24, 25, 26, 27, 28, 29]
     }
     insertItem(topIndexs, '.bar-renderer.top', 'bar-item-tab');
     insertItem(bottomIndexs, '.bar-renderer.bottom', 'bar-item-tab');
@@ -22,10 +22,10 @@ async function initializeToolbars() {
 const synth = window.speechSynthesis;
 
 const speak = (msg) => {
-  let u = new SpeechSynthesisUtterance();
-  u.lang = 'zh-TW';
-  u.text = msg;
-  synth.speak(u);
+    let u = new SpeechSynthesisUtterance();
+    u.lang = 'zh-TW';
+    u.text = msg;
+    synth.speak(u);
 };
 ///////////////////////////////////////////////////
 const items = [
@@ -38,7 +38,7 @@ const items = [
             // if (typeof NativeAndroid !== 'undefined') {
             //     NativeAndroid.launchApp("psycho.euphoria.l", `/svgviewer?id=${id}`);
             // } else {
-               window.open(`${baseUri}/svgviewer?id=${id}`, '_blank');
+            window.open(`${baseUri}/svgviewer?id=${id}`, '_blank');
             // }
         }
     ], [
@@ -163,7 +163,7 @@ items.push([
     29,
     "text_snippet",
     "代码段",
-     () => {
+    () => {
         showSnippets();
     }
 ]);
@@ -196,7 +196,9 @@ items.push([
     "image",
     "插入",
     async () => {
-        await insertImage(baseUri);
+        //await insertImage(baseUri);
+        const text = await readText();
+        textarea.value +=   "\r\n\r\n" + text;
     }
 ]);
 items.push([

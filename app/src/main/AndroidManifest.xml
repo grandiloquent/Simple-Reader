@@ -36,7 +36,8 @@
             android:configChanges="orientation|screenSize"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/MyTheme">
+            android:theme="@style/MyTheme"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
