@@ -337,7 +337,14 @@ public class MainActivity extends Activity {
             return sb.toString();
         } else {
             try {
-                return InputService.translateChineseWord(s, mDatabase);
+                String res = InputService.translateWord(s, mDatabase);
+                if (res == null) {
+                    res = InputService.translateCollegiate(s, mDatabase);
+                }
+                if (res == null) {
+                    res = InputService.translateChineseWord(s, mDatabase);
+                }
+                return res;
             } catch (Exception e) {
                 return null;
             }
@@ -376,7 +383,7 @@ public class MainActivity extends Activity {
                 try {
                     //byte[] postData = Uri.encode(Shared.getText(MainActivity.this)).getBytes(StandardCharsets.UTF_8);
                     //int postDataLength = postData.length;
-                    String request =TranslatorApi.createTranslationURI(Shared.getText(MainActivity.this)); //"http://fanyi.youdao.com/translate?doctype=json&jsonversion=&type=&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=&abtest=";
+                    String request = TranslatorApi.createTranslationURI(Shared.getText(MainActivity.this)); //"http://fanyi.youdao.com/translate?doctype=json&jsonversion=&type=&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=&abtest=";
                     URL url = new URL(request);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 //                    conn.setDoOutput(true);
@@ -389,9 +396,9 @@ public class MainActivity extends Activity {
 //                    try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
 //                        wr.write(postData);
 //                    }
-                    JSONObject o=new JSONObject(Shared.readString(conn));
-                    JSONArray array= o.getJSONArray("translation");
-                    StringBuilder stringBuilder=new StringBuilder();
+                    JSONObject o = new JSONObject(Shared.readString(conn));
+                    JSONArray array = o.getJSONArray("translation");
+                    StringBuilder stringBuilder = new StringBuilder();
                     for (int i = 0; i < array.length(); i++) {
                         stringBuilder.append(array.getString(i)).append("\n");
                     }
@@ -492,7 +499,6 @@ public class MainActivity extends Activity {
                     if (x < 132) {//
                         navigateToPreviousPage();
                         if (y > 1800) {
-
                         }
                         return true;
                     }
@@ -511,7 +517,6 @@ public class MainActivity extends Activity {
                         while (j < ss.length() && (ss.charAt(j) != '.' && ss.charAt(j) != '。')) {
                             j++;
                         }
-                        Log.e("B5aOx2", String.format("onCreate, %s", ss.substring(i, j)));
                         Shared.setText(this, ss.substring(i, j));
                     }
                     String s = mTextView.getText().subSequence(positions[0], positions[1]).toString().trim();
@@ -582,7 +587,6 @@ public class MainActivity extends Activity {
         }
         super.onBackPressed();
     }
-
 //    @Override
 //    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 //        super.onCreateContextMenu(menu, v, menuInfo);
@@ -615,6 +619,7 @@ public class MainActivity extends Activity {
         menu.add(0, 3, 0, "历史");
         menu.add(0, 14, 0, "复制").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         menu.add(0, 15, 0, "翻译").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, 17, 0, "复制");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -689,10 +694,12 @@ public class MainActivity extends Activity {
                 break;
             case 14:
                 mIsCopyLine = !mIsCopyLine;
-                takePhotos();
                 break;
             case 15:
                 translate();
+                break;
+            case 17:
+                takePhotos();
                 break;
         }
         return super.onOptionsItemSelected(item);
