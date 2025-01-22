@@ -381,33 +381,13 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 try {
-                    //byte[] postData = Uri.encode(Shared.getText(MainActivity.this)).getBytes(StandardCharsets.UTF_8);
-                    //int postDataLength = postData.length;
-                    String request = TranslatorApi.createTranslationURI(Shared.getText(MainActivity.this)); //"http://fanyi.youdao.com/translate?doctype=json&jsonversion=&type=&keyfrom=&model=&mid=&imei=&vendor=&screen=&ssid=&network=&abtest=";
-                    URL url = new URL(request);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//                    conn.setDoOutput(true);
-//                    conn.setInstanceFollowRedirects(false);
-//                    conn.setRequestMethod("POST");
-//                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-//                    conn.setRequestProperty("charset", "utf-8");
-//                    conn.setRequestProperty("Content-Length", Integer.toString(postDataLength));
-//                    conn.setUseCaches(false);
-//                    try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
-//                        wr.write(postData);
-//                    }
-                    JSONObject o = new JSONObject(Shared.readString(conn));
-                    JSONArray array = o.getJSONArray("translation");
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (int i = 0; i < array.length(); i++) {
-                        stringBuilder.append(array.getString(i)).append("\n");
-                    }
+                    String results = TranslatorApi.translateWords(Shared.getText(MainActivity.this));
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Shared.setText(MainActivity.this, stringBuilder.toString());
+                            Shared.setText(MainActivity.this, results);
                             Shared.postOnMainThread(() -> {
-                                Shared.createFloatView(MainActivity.this, stringBuilder.toString());
+                                Shared.createFloatView(MainActivity.this, results);
                             });
                         }
                     });

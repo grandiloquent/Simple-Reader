@@ -87,6 +87,7 @@ public class InputService extends InputMethodService implements KeyboardView.OnK
     }
 
     public static String translateChineseWord(String q, Database database) throws Exception {
+        Log.e("B5aOx2", String.format("translateChineseWord, %s", ""));
         String result = database.query(q);
         if (result != null) {
             return result;
@@ -183,10 +184,10 @@ public class InputService extends InputMethodService implements KeyboardView.OnK
                     new Thread(() -> {
                         String response = "";
                         try {
-                            response = mCurrentString.contains(" ") ? translate("zh", mCurrentString) : translateChineseWord(mCurrentString, mDatabase);
-                            if (response == null) {
-                                response = translateWord(mCurrentString, mDatabase);
-                            }
+                            response = mCurrentString.contains(" ") ? translate("zh", mCurrentString) :
+                                    (
+                                             translateWord(mCurrentString, mDatabase));
+
                             if (response == null) {
                                 response = translateCollegiate(mCurrentString, mDatabase);
                             }
@@ -202,7 +203,7 @@ public class InputService extends InputMethodService implements KeyboardView.OnK
                     new Thread(() -> {
                         String response = "";
                         try {
-                            response = translate("en", mCurrentString);
+                            response =translateChineseWord(mCurrentString, mDatabase); //translate("en", mCurrentString);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
