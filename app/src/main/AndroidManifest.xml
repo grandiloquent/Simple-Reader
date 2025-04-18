@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-feature android:name="android.hardware.camera" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <uses-permission android:name="android.permission.CAMERA" />
     <application
@@ -54,7 +55,8 @@
 
         </activity>
         <activity android:name=".DictionaryActivity" />
-        <service android:name=".AppService" />
+        <service android:name=".AppService"  android:exported="true"
+            android:foregroundServiceType="specialUse" />
     </application>
 
 </manifest>

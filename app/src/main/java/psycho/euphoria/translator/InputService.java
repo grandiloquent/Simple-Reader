@@ -87,7 +87,6 @@ public class InputService extends InputMethodService implements KeyboardView.OnK
     }
 
     public static String translateChineseWord(String q, Database database) throws Exception {
-        Log.e("B5aOx2", String.format("translateChineseWord, %s", ""));
         String result = database.query(q);
         if (result != null) {
             return result;

@@ -326,7 +326,7 @@ public class MainActivity extends Activity {
     }
 
     private String trans(String s) {
-        if (s.length() > 1 && TranslatorApi.mChinese.matcher(s).find()) {
+        if (s.length() > 0 && TranslatorApi.mChinese.matcher(s).find()) {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < s.length(); i++) {
                 try {
@@ -692,7 +692,7 @@ public class MainActivity extends Activity {
         SearchView searchView = new SearchView(this);
         searchItem.setActionView(searchView);
         searchView.setIconified(true);
-        //searchItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        searchItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         searchView.setOnQueryTextListener(new OnQueryTextListener() {
             @Override
             public boolean onQueryTextChange(String newText) {

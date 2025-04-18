@@ -50,6 +50,20 @@ public class TranslatorApi {
                 return sb.toString();
 
             }
+            else if(obj.has("simple")){
+                JSONArray dataList = obj.getJSONObject("simple")
+                        .getJSONArray("word");
+                StringBuffer sb = new StringBuffer();
+                for (int i = 0; i < dataList.length(); i++) {
+
+                    if (dataList.getJSONObject(i).has("return-phrase"))
+                        sb.append(dataList.getJSONObject(i).getString("return-phrase")).append(" ");
+                    if (dataList.getJSONObject(i).has("phone"))
+                        sb.append(dataList.getJSONObject(i).getString("phone")).append("\n");
+
+                }
+                return sb.toString();
+            }
         } else {
             if (obj.has("ec")) {
                 JSONObject word = obj.getJSONObject("ec")
