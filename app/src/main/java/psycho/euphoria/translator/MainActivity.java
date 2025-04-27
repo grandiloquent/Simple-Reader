@@ -38,11 +38,14 @@ import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.DownloadListener;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
+import android.widget.LinearLayout;
 import android.widget.SearchView;
 import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
@@ -482,7 +485,8 @@ public class MainActivity extends Activity {
                         }
                         return true;
                     }
-                    if (x > 1080 - 132) {
+                    // - 132
+                    if (x > 1080) {
                         navigateToNextPage();
                         return true;
                     }
@@ -599,7 +603,7 @@ public class MainActivity extends Activity {
         menu.add(0, 3, 0, "历史");
         menu.add(0, 14, 0, "复制").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         menu.add(0, 15, 0, "翻译").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        menu.add(0, 17, 0, "复制");
+        menu.add(0, 17, 0, "粘贴");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -701,13 +705,55 @@ public class MainActivity extends Activity {
 
             @Override
             public boolean onQueryTextSubmit(String query) {
-                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
-                intent.putExtra(KEY_Q, query);
-                startActivityForResult(intent, SEARCH_REQUEST_CODE);
+//                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+//                intent.putExtra(KEY_Q, query);
+//                startActivityForResult(intent, SEARCH_REQUEST_CODE);
+                searchText(query);
                 return false;
             }
         });
     }
+
+    private void searchText(String query) {
+       /* AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("搜索");
+// Inflate a layout containing an EditText
+        final EditText input = new EditText(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        input.setLayoutParams(lp);
+        builder.setView(input);
+// Set up the buttons
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            String value = input.getText().toString();
+            // Do something with the entered value
+        });
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setOnShowListener(dialog -> {
+            input.requestFocus();
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT);
+        });
+        alertDialog.show();*/
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("搜索结果");
+        final String[] items = mNotes.queryContents(query).stream()
+                .map(x -> Integer.toString(x))
+                .toArray(String[]::new);
+        builder.setItems(items, (dialog, which) -> {
+            // The 'which' argument contains the index of the selected item
+            String selectedItem = items[which];
+            mIndex = Integer.parseInt(selectedItem);
+            loadSpecifiedPage();
+            // Do something with the selected item
+        });
+        builder.setNegativeButton("取消", (dialog, which) -> dialog.cancel());
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
+
 
     void navigateToPreviousPage() {
         mIndex--;
